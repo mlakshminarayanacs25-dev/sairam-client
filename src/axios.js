@@ -1,0 +1,1 @@
+import axios from &#39;axios&#39;;&#10;&#10;const api = axios.create({&#10;  baseURL: window.location.hostname === &#39;localhost&#39; ? &#39;http://localhost:5000&#39; : &#39;https://sairam-server.onrender.com&#39;&#10;});&#10;&#10;export default api;

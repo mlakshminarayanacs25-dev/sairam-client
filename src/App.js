@@ -59,7 +59,6 @@ const Navbar = ({ student, setStudent }) => (
 const HomePage = () => {
   return (
     <div style={{ width: '100%' }}>
-      {/* 1. HERO SECTION */}
       <section style={heroSectionStyle}>
         <div style={heroContentStyle}>
           <h1 style={{ fontSize: '3.8rem', fontWeight: '800', margin: '0', lineHeight: '1.1' }}>
@@ -75,7 +74,6 @@ const HomePage = () => {
         </div>
       </section>
 
-      {/* 2. BATCH & CONTACT INFO SECTION */}
       <section style={{ padding: '60px 8%', background: COLORS.white }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '30px' }}>
           <div style={infoCardStyle}>
@@ -100,7 +98,6 @@ const HomePage = () => {
         </div>
       </section>
 
-      {/* 3. FOUNDER SECTION */}
       <section style={sectionWrapper}>
         <div style={founderGrid}>
           <div style={founderImageWrapper}>
@@ -122,22 +119,15 @@ const HomePage = () => {
         </div>
       </section>
 
-      {/* 4. GALLERY SECTION */}
       <section style={{ ...sectionWrapper, background: 'white' }}>
         <div style={{ textAlign: 'center', marginBottom: '50px' }}>
           <h2 style={{ fontSize: '2.5rem', color: COLORS.navy }}>Learning Highlights</h2>
           <div style={{ width: '80px', height: '4px', background: COLORS.gold, margin: '15px auto' }}></div>
         </div>
         <div style={galleryGrid}>
-          <div style={galleryCard}>
-            <img src={TUTORIALPortrait} alt="Tutorial Feature" style={galleryImg} />
-          </div>
-          <div style={galleryCard}>
-            <img src={POSTERPortrait} alt="POSTER Feature" style={galleryImg} />
-            </div>
-          <div style={galleryCard}>
-           <img src={SKILLSPortrait} alt="SKILLS Feature" style={galleryImg} />
-          </div>
+          <div style={galleryCard}><img src={TUTORIALPortrait} alt="Tutorial" style={galleryImg} /></div>
+          <div style={galleryCard}><img src={POSTERPortrait} alt="POSTER" style={galleryImg} /></div>
+          <div style={galleryCard}><img src={SKILLSPortrait} alt="SKILLS" style={galleryImg} /></div>
         </div>
       </section>
     </div>
@@ -254,9 +244,7 @@ const Dashboard = ({ student }) => {
               {categoryFiles.length > 0 ? categoryFiles.map((file, idx) => (
                 <div key={idx} style={{ padding: '15px', background: 'white', borderRadius: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 2px 5px rgba(0,0,0,0.05)', border: '1px solid #eee' }}>
                   <span style={{fontWeight: '500'}}>{file.name.split('-').slice(2).join('-')}</span>
-                  <button onClick={() => handleDownload(file.name)} style={downloadBtnStyle}>
-                    DOWNLOAD PDF
-                  </button>
+                  <button onClick={() => handleDownload(file.name)} style={downloadBtnStyle}>DOWNLOAD PDF</button>
                 </div>
               )) : <p>No files found.</p>}
             </div>
@@ -267,7 +255,7 @@ const Dashboard = ({ student }) => {
   );
 };
 
-// --- AUTH PAGE ---
+// --- AUTH PAGE (UPDATED TO FIX 400 ERRORS) ---
 const AuthPage = ({ setStudent }) => {
   const [isLogin, setIsLogin] = useState(true);
   const [form, setForm] = useState({ name: '', mobile: '', email: '', password: '', otp: '' });
@@ -279,18 +267,34 @@ const AuthPage = ({ setStudent }) => {
     setIsProcessing(true);
     try {
       if (isLogin) {
-        const res = await axios.post('https://sairam-server.onrender.com/api/login', { mobile: form.mobile, password: form.password });
+        const res = await axios.post('https://sairam-server.onrender.com/api/login', { 
+            mobile: form.mobile, 
+            password: form.password 
+        });
         setStudent(res.data.student);
         localStorage.setItem('studentUser', JSON.stringify(res.data.student));
       } else if (!otpSent) {
-        await axios.post('https://sairam-server.onrender.com/api/register', form);
+        // MATCHED: 'name' from form mapped to 'username' for backend
+        await axios.post('https://sairam-server.onrender.com/api/register', {
+            username: form.name, 
+            email: form.email,
+            password: form.password,
+            mobile: form.mobile
+        });
         setOtpSent(true);
       } else {
-        await axios.post('https://sairam-server.onrender.com/api/verify-registration', form);
+        // MATCHED: API path changed to /verify to match new backend
+        await axios.post('https://sairam-server.onrender.com/api/verify', { 
+            email: form.email, 
+            otp: form.otp 
+        });
         setPending(true);
       }
-    } catch (err) { alert(err.response?.data?.error || "Error"); }
-    finally { setIsProcessing(false); }
+    } catch (err) { 
+        alert(err.response?.data?.message || "Error occurred"); 
+    } finally { 
+        setIsProcessing(false); 
+    }
   };
 
   if (pending) return <div style={cardStyle}><h2 style={{color: COLORS.navy}}>Verification Successful</h2><p>Waiting for admin approval.</p></div>;
@@ -303,8 +307,12 @@ const AuthPage = ({ setStudent }) => {
       {!isLogin && <input style={inputStyle} placeholder="Email" onChange={e => setForm({...form, email: e.target.value})} />}
       <input type="password" style={inputStyle} placeholder="Password" onChange={e => setForm({...form, password: e.target.value})} />
       {!isLogin && otpSent && <input style={inputStyle} placeholder="Enter OTP" onChange={e => setForm({...form, otp: e.target.value})} />}
-      <button disabled={isProcessing} style={btnStyle} onClick={handleAction}>{isProcessing ? 'Wait...' : (isLogin ? 'LOG IN' : (otpSent ? 'COMPLETE' : 'SEND OTP'))}</button>
-      <p onClick={() => setIsLogin(!isLogin)} style={{ cursor: 'pointer', color: COLORS.gold, marginTop: '20px', fontWeight: 'bold' }}>{isLogin ? "NEW USER? REGISTER" : "SIGN IN"}</p>
+      <button disabled={isProcessing} style={btnStyle} onClick={handleAction}>
+        {isProcessing ? 'Wait...' : (isLogin ? 'LOG IN' : (otpSent ? 'COMPLETE' : 'SEND OTP'))}
+      </button>
+      <p onClick={() => setIsLogin(!isLogin)} style={{ cursor: 'pointer', color: COLORS.gold, marginTop: '20px', fontWeight: 'bold' }}>
+        {isLogin ? "NEW USER? REGISTER" : "SIGN IN"}
+      </p>
     </div>
   );
 };
@@ -324,7 +332,7 @@ const AdminPanel = () => {
         const res = await axios.get('https://sairam-server.onrender.com/api/admin/pending');
         setStudents(res.data);
         fetchFiles();
-    } catch (err) { console.error("Fetch error", err); }
+    } catch (err) { console.error(err); }
   };
 
   const fetchFiles = async () => {
@@ -335,14 +343,11 @@ const AdminPanel = () => {
   };
 
   useEffect(() => {
-    if (authed) {
-      fetchFiles();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    if (authed) fetchFiles();
   }, [subject, authed]);
 
   const handleUpload = async () => {
-    if(!file) return alert("Select a PDF first");
+    if(!file) return alert("Select a PDF");
     const formData = new FormData();
     formData.append('subject', subject);
     formData.append('category', category);
@@ -351,33 +356,27 @@ const AdminPanel = () => {
       await axios.post('https://sairam-server.onrender.com/api/admin/upload', formData, {
           headers: { 'Content-Type': 'multipart/form-data' }
       });
-      alert("✅ Uploaded Successfully!");
+      alert("✅ Uploaded!");
       setFile(null);
       document.getElementById('fileInput').value = "";
       fetchFiles(); 
-    } catch (err) { alert("❌ Upload failed."); }
+    } catch (err) { alert("❌ Failed."); }
   };
 
   const deleteFile = async (fileName) => {
       if(!window.confirm(`Delete ${fileName}?`)) return;
       try {
           await axios.post('https://sairam-server.onrender.com/api/admin/delete-file', { subject, fileName });
-          alert("Deleted!");
           fetchFiles();
-      } catch { alert("Delete failed"); }
+      } catch { alert("Failed"); }
   };
 
-  // --- ADDED REMOVE STUDENT FUNCTION ---
   const handleRemoveStudent = async (mobile) => {
-    if (!window.confirm("Are you sure you want to remove this student? This cannot be undone.")) return;
+    if (!window.confirm("Remove student?")) return;
     try {
         await axios.delete(`https://sairam-server.onrender.com/api/admin/delete-student/${mobile}`);
-        alert("Student removed successfully.");
-        fetchData(); // Refresh list
-    } catch (err) {
-        alert("Failed to remove student.");
-        console.error(err);
-    }
+        fetchData();
+    } catch (err) { alert("Failed."); }
   };
 
   if (!authed) return (
@@ -393,7 +392,7 @@ const AdminPanel = () => {
       <h2 style={{color: COLORS.navy}}>Student Management</h2>
       {students.map(s => (
         <div key={s.mobile} style={adminRowStyle}>
-          <div><strong>{s.name}</strong> ({s.mobile}) - {s.isApproved ? 'Approved' : 'Pending'}</div>
+          <div><strong>{s.name}</strong> ({s.mobile})</div>
           <div>
             {!s.isApproved && <button onClick={async () => { await axios.post('https://sairam-server.onrender.com/api/admin/approve', {mobile: s.mobile}); fetchData(); }} style={approveBtnStyle}>Approve</button>}
             <button onClick={() => handleRemoveStudent(s.mobile)} style={rejectBtnStyle}>Remove</button>
@@ -409,12 +408,12 @@ const AdminPanel = () => {
           <option value="SamplePaper">Sample Paper</option>
           <option value="CaseStudy">Case Study</option>
           <option value="Logic">Assertion & Reasoning</option>
-          <option value="FormulaSheet">Formula Sheet (Math)</option>
-          <option value="MapQuestions">Map Questions (Social)</option>
+          <option value="FormulaSheet">Formula Sheet</option>
+          <option value="MapQuestions">Map Questions</option>
         </select>
         <input id="fileInput" type="file" accept=".pdf" style={inputStyle} onChange={e => setFile(e.target.files[0])} />
         <button onClick={handleUpload} style={btnStyle}>UPLOAD PDF</button>
-        <h4 style={{marginTop: '30px', color: COLORS.navy}}>Existing Files in {subject}:</h4>
+        <h4 style={{marginTop: '30px'}}>Existing Files:</h4>
         {fileList.map(f => (
             <div key={f.name} style={adminRowStyle}>
                 <span>{f.name}</span>
@@ -454,15 +453,15 @@ const staffBtnStyle = { background: 'rgba(251,191,36,0.1)', color: COLORS.gold, 
 const logoutBtnStyle = { background: COLORS.red, color: 'white', border: 'none', padding: '10px 20px', borderRadius: '10px', cursor: 'pointer' };
 const cardStyle = { maxWidth: '400px', margin: '80px auto', background: 'white', padding: '40px', borderRadius: '20px', textAlign: 'center', boxShadow: '0 10px 30px rgba(0,0,0,0.1)' };
 const inputStyle = { width: '100%', padding: '12px', margin: '10px 0', borderRadius: '10px', border: `1px solid #ddd`, boxSizing: 'border-box', outline: 'none' };
-const btnStyle = { width: '100%', padding: '14px', background: COLORS.navy, color: COLORS.gold, border: 'none', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', transition: '0.3s', outline: 'none' };
+const btnStyle = { width: '100%', padding: '14px', background: COLORS.navy, color: COLORS.gold, border: 'none', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' };
 const adminRowStyle = { background: 'white', padding: '15px', display: 'flex', justifyContent: 'space-between', marginBottom: '10px', borderRadius: '10px', border: '1px solid #eee', alignItems: 'center' };
-const approveBtnStyle = { background: COLORS.green, color: 'white', border: 'none', padding: '8px 15px', borderRadius: '5px', marginRight: '5px', cursor: 'pointer', fontWeight: 'bold' };
-const rejectBtnStyle = { background: COLORS.red, color: 'white', border: 'none', padding: '8px 15px', borderRadius: '5px', cursor: 'pointer', fontWeight: 'bold' };
+const approveBtnStyle = { background: COLORS.green, color: 'white', border: 'none', padding: '8px 15px', borderRadius: '5px', cursor: 'pointer' };
+const rejectBtnStyle = { background: COLORS.red, color: 'white', border: 'none', padding: '8px 15px', borderRadius: '5px', cursor: 'pointer' };
 const profileCardStyle = { background: 'white', padding: '30px', borderRadius: '20px', display: 'inline-block', textAlign: 'left', minWidth: '320px', boxShadow: '0 10px 20px rgba(0,0,0,0.05)' };
 const profileLine = { padding: '12px 0', borderBottom: '1px solid #eee' };
-const subjectCard = { background: 'white', padding: '30px', borderRadius: '15px', border: '1px solid #eee', textAlign: 'center', boxShadow: '0 4px 10px rgba(0,0,0,0.02)' };
-const actionBtn = { background: COLORS.navy, color: COLORS.gold, border: 'none', padding: '10px 20px', borderRadius: '8px', marginTop: '15px', cursor: 'pointer', fontWeight: 'bold' };
-const downloadBtnStyle = { background: COLORS.green, color: 'white', border: 'none', padding: '10px 20px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' };
+const subjectCard = { background: 'white', padding: '30px', borderRadius: '15px', border: '1px solid #eee', textAlign: 'center' };
+const actionBtn = { background: COLORS.navy, color: COLORS.gold, border: 'none', padding: '10px 20px', borderRadius: '8px', marginTop: '15px', cursor: 'pointer' };
+const downloadBtnStyle = { background: COLORS.green, color: 'white', border: 'none', padding: '10px 20px', borderRadius: '8px', cursor: 'pointer' };
 
 const infoCardStyle = {
   background: 'white',
