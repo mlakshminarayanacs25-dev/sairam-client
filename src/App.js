@@ -18,6 +18,9 @@ const COLORS = {
     glass: 'rgba(255, 255, 255, 0.8)'
 };
 
+// --- GLOBAL AXIOS CONFIG FOR CORS ---
+axios.defaults.headers.post['Content-Type'] = 'application/json';
+
 export default function App() {
   const [student, setStudent] = useState(JSON.parse(localStorage.getItem('studentUser')));
 
@@ -108,8 +111,7 @@ const HomePage = () => {
             <h4 style={{ color: COLORS.gold, letterSpacing: '2px', margin: '0' }}>A VISION FOR SUCCESS</h4>
             <h2 style={{ fontSize: '2.5rem', color: COLORS.navy, marginTop: '10px' }}>Guiding the Next Generation</h2>
             <p style={{ lineHeight: '1.8', color: '#475569', fontSize: '1.1rem' }}>
-              "Our mission at Sai Ram Tutorials is to simplify complex concepts and ignite a passion for learning. 
-              We don't just teach for exams; we prepare students for life by building strong conceptual foundations."
+              "Our mission at Sai Ram Tutorials is to simplify complex concepts and ignite a passion for learning."
             </p>
             <div style={{ marginTop: '20px' }}>
               <h3 style={{ margin: 0, color: COLORS.navy }}>Mrs. K PUSHPALATHA</h3>
@@ -255,7 +257,7 @@ const Dashboard = ({ student }) => {
   );
 };
 
-// --- AUTH PAGE (UPDATED TO FIX 400 ERRORS) ---
+// --- AUTH PAGE ---
 const AuthPage = ({ setStudent }) => {
   const [isLogin, setIsLogin] = useState(true);
   const [form, setForm] = useState({ name: '', mobile: '', email: '', password: '', otp: '' });
@@ -265,33 +267,39 @@ const AuthPage = ({ setStudent }) => {
 
   const handleAction = async () => {
     setIsProcessing(true);
+    // Standard headers to pass CORS preflight
+    const config = {
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      }
+    };
+
     try {
       if (isLogin) {
         const res = await axios.post('https://sairam-server.onrender.com/api/login', { 
             mobile: form.mobile, 
             password: form.password 
-        });
+        }, config);
         setStudent(res.data.student);
         localStorage.setItem('studentUser', JSON.stringify(res.data.student));
       } else if (!otpSent) {
-        // MATCHED: 'name' from form mapped to 'username' for backend
         await axios.post('https://sairam-server.onrender.com/api/register', {
             username: form.name, 
             email: form.email,
             password: form.password,
             mobile: form.mobile
-        });
+        }, config);
         setOtpSent(true);
       } else {
-        // MATCHED: API path changed to /verify to match new backend
         await axios.post('https://sairam-server.onrender.com/api/verify', { 
             email: form.email, 
             otp: form.otp 
-        });
+        }, config);
         setPending(true);
       }
     } catch (err) { 
-        alert(err.response?.data?.message || "Error occurred"); 
+        alert(err.response?.data?.message || "CORS or Network Error occurred"); 
     } finally { 
         setIsProcessing(false); 
     }
@@ -302,11 +310,11 @@ const AuthPage = ({ setStudent }) => {
   return (
     <div style={cardStyle}>
       <h2 style={{color: COLORS.navy}}>{isLogin ? 'Welcome Back' : 'Create Account'}</h2>
-      {!isLogin && <input style={inputStyle} placeholder="Full Name" onChange={e => setForm({...form, name: e.target.value})} />}
-      <input style={inputStyle} placeholder="Mobile" onChange={e => setForm({...form, mobile: e.target.value})} />
-      {!isLogin && <input style={inputStyle} placeholder="Email" onChange={e => setForm({...form, email: e.target.value})} />}
-      <input type="password" style={inputStyle} placeholder="Password" onChange={e => setForm({...form, password: e.target.value})} />
-      {!isLogin && otpSent && <input style={inputStyle} placeholder="Enter OTP" onChange={e => setForm({...form, otp: e.target.value})} />}
+      {!isLogin && <input style={inputStyle} placeholder="Full Name" value={form.name} onChange={e => setForm({...form, name: e.target.value})} />}
+      <input style={inputStyle} placeholder="Mobile" value={form.mobile} onChange={e => setForm({...form, mobile: e.target.value})} />
+      {!isLogin && <input style={inputStyle} placeholder="Email" value={form.email} onChange={e => setForm({...form, email: e.target.value})} />}
+      <input type="password" style={inputStyle} placeholder="Password" value={form.password} onChange={e => setForm({...form, password: e.target.value})} />
+      {!isLogin && otpSent && <input style={inputStyle} placeholder="Enter OTP" value={form.otp} onChange={e => setForm({...form, otp: e.target.value})} />}
       <button disabled={isProcessing} style={btnStyle} onClick={handleAction}>
         {isProcessing ? 'Wait...' : (isLogin ? 'LOG IN' : (otpSent ? 'COMPLETE' : 'SEND OTP'))}
       </button>
